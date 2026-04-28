@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+{% block title %}Cronograma de Estudos - StudyPlan{% endblock %}
+{% block page_title %}Cronograma de Estudos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-end mb-3">
+  <a href="{% url 'cronograma_criar' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle"></i> Nova Sessão de Estudo
+  </a>
+</div>
+
+<div class="card">
+  {% if cronogramas %}
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Status</th>
+          <th>Disciplina</th>
+          <th>Data</th>
+          <th>Tempo Planejado</th>
+          <th>O que estudar</th>
+          <th class="text-end">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cronogramas %}
+        <tr class="{% if c.concluido %}table-light text-muted{% endif %}">
+          <td>
+            <a href="{% url 'cronograma_concluir' c.pk %}"
+               class="btn btn-sm {% if c.concluido %}btn-success{% else %}btn-outline-secondary{% endif %}">
+              <i class="bi bi-{% if c.concluido %}check-circle-fill{% else %}circle{% endif %}"></i>
+            </a>
+          </td>
+          <td class="fw-semibold {% if c.concluido %}text-decoration-line-through{% endif %}">
+            {{ c.disciplina.nome }}
+          </td>
+          <td>{{ c.data|date:"d/m/Y" }}</td>
+          <td><span class="badge bg-info text-dark">{{ c.tempo_formatado }}</span></td>
+          <td class="text-muted">{{ c.descricao|default:"—" }}</td>
+          <td class="text-end">
+            <a href="{% url 'cronograma_editar' c.pk %}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <a href="{% url 'cronograma_excluir' c.pk %}" class="btn btn-sm btn-outline-danger">
+              <i class="bi bi-trash"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-clock-history display-4"></i>
+    <p class="mt-3">Nenhuma sessão de estudo planejada ainda.</p>
+    <a href="{% url 'cronograma_criar' %}" class="btn btn-primary">Planejar primeira sessão</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

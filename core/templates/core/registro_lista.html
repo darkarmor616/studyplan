@@ -1,0 +1,82 @@
+{% extends 'core/base.html' %}
+{% block title %}Horas Estudadas - StudyPlan{% endblock %}
+{% block page_title %}Horas Estudadas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-end mb-3">
+  <a href="{% url 'registro_criar' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle"></i> Registrar Horas
+  </a>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- Totais por disciplina -->
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart"></i> Total por Disciplina</h6>
+      {% if totais %}
+        {% for t in totais %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-truncate me-2">{{ t.disciplina__nome }}</span>
+          <span class="badge bg-info text-dark flex-shrink-0">
+            {% if t.total >= 60 %}{{ t.total|floatformat:0 }}min{% else %}{{ t.total }}min{% endif %}
+          </span>
+        </div>
+        {% endfor %}
+        <hr class="my-2">
+        <div class="d-flex justify-content-between fw-bold">
+          <span>Total geral</span>
+          <span class="text-primary">{{ total_geral }} min</span>
+        </div>
+      {% else %}
+        <p class="text-muted">Nenhum registro ainda.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Lista de registros -->
+  <div class="col-md-8">
+    <div class="card">
+      {% if registros %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Data</th>
+              <th>Disciplina</th>
+              <th>Tempo Estudado</th>
+              <th>Observação</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in registros %}
+            <tr>
+              <td>{{ r.data|date:"d/m/Y" }}</td>
+              <td class="fw-semibold">{{ r.disciplina.nome }}</td>
+              <td><span class="badge bg-success">{{ r.tempo_formatado }}</span></td>
+              <td class="text-muted">{{ r.observacao|default:"—" }}</td>
+              <td class="text-end">
+                <a href="{% url 'registro_editar' r.pk %}" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{% url 'registro_excluir' r.pk %}" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-hourglass display-4"></i>
+        <p class="mt-3">Nenhum registro de horas ainda.</p>
+        <a href="{% url 'registro_criar' %}" class="btn btn-primary">Registrar primeiras horas</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

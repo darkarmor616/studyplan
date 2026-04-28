@@ -1,0 +1,45 @@
+{% extends 'core/base.html' %}
+{% block title %}Atividades - StudyPlan{% endblock %}
+{% block page_title %}Atividades e Provas{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-end mb-3">
+  <a href="{% url 'atividade_criar' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Nova Atividade</a>
+</div>
+<div class="card">
+  {% if atividades %}
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr><th>Status</th><th>Título</th><th>Disciplina</th><th>Data</th><th>Tipo</th><th>Prioridade</th><th class="text-end">Ações</th></tr>
+      </thead>
+      <tbody>
+        {% for a in atividades %}
+        <tr class="{% if a.concluida %}table-light text-muted{% endif %}">
+          <td>
+            <a href="{% url 'atividade_concluir' a.pk %}" class="btn btn-sm {% if a.concluida %}btn-success{% else %}btn-outline-secondary{% endif %}">
+              <i class="bi bi-{% if a.concluida %}check-circle-fill{% else %}circle{% endif %}"></i>
+            </a>
+          </td>
+          <td class="{% if a.concluida %}text-decoration-line-through{% endif %} fw-semibold">{{ a.titulo }}</td>
+          <td class="text-muted">{{ a.disciplina.nome }}</td>
+          <td>{{ a.data|date:"d/m/Y" }}</td>
+          <td><span class="badge bg-secondary">{{ a.get_tipo_display }}</span></td>
+          <td><span class="badge badge-prioridade-{{ a.prioridade }}">{{ a.get_prioridade_display }}</span></td>
+          <td class="text-end">
+            <a href="{% url 'atividade_editar' a.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+            <a href="{% url 'atividade_excluir' a.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-calendar-x display-4"></i>
+    <p class="mt-3">Nenhuma atividade cadastrada ainda.</p>
+    <a href="{% url 'atividade_criar' %}" class="btn btn-primary">Cadastrar primeira atividade</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

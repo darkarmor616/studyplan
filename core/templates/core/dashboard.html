@@ -1,0 +1,121 @@
+{% extends 'core/base.html' %}
+{% block title %}Dashboard - StudyPlan{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+{% if lembretes_atrasados %}
+<div class="alert alert-danger d-flex align-items-start gap-2 mb-3">
+  <i class="bi bi-exclamation-triangle-fill fs-5 mt-1"></i>
+  <div><strong>Atividades em atraso!</strong>
+    <ul class="mb-0 mt-1">
+      {% for a in lembretes_atrasados %}
+      <li><strong>{{ a.titulo }}</strong> — {{ a.disciplina.nome }} <span class="text-danger">({{ a.data|date:"d/m/Y" }})</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+
+{% if lembretes_proximos %}
+<div class="alert alert-warning d-flex align-items-start gap-2 mb-3">
+  <i class="bi bi-bell-fill fs-5 mt-1"></i>
+  <div><strong>Lembrete — próximos 7 dias:</strong>
+    <ul class="mb-0 mt-1">
+      {% for a in lembretes_proximos %}
+      <li><strong>{{ a.titulo }}</strong> — {{ a.disciplina.nome }} <span class="text-muted">({{ a.data|date:"d/m/Y" }})</span>
+        <span class="badge badge-prioridade-{{ a.prioridade }} ms-1">{{ a.get_prioridade_display }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+
+{% if cronogramas_hoje %}
+<div class="alert alert-info d-flex align-items-start gap-2 mb-3">
+  <i class="bi bi-clock-history fs-5 mt-1"></i>
+  <div><strong>Estudos planejados para hoje:</strong>
+    <ul class="mb-0 mt-1">
+      {% for c in cronogramas_hoje %}
+      <li><strong>{{ c.disciplina.nome }}</strong> — {{ c.tempo_formatado }}
+        {% if c.descricao %}<span class="text-muted"> · {{ c.descricao }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+
+<!-- Cards de resumo -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card text-center p-3">
+      <div class="display-6 text-primary fw-bold">{{ total_disciplinas }}</div>
+      <div class="text-muted"><i class="bi bi-journal-bookmark"></i> Disciplinas</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3">
+      <div class="display-6 text-warning fw-bold">{{ total_pendentes }}</div>
+      <div class="text-muted"><i class="bi bi-clock"></i> Pendentes</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3">
+      <div class="display-6 text-success fw-bold">{{ total_concluidas }}</div>
+      <div class="text-muted"><i class="bi bi-check-circle"></i> Concluídas</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3">
+      <div class="display-6 text-info fw-bold">
+        {% if total_minutos_semana >= 60 %}{{ total_minutos_semana|floatformat:0 }}{% else %}{{ total_minutos_semana }}{% endif %}
+        <small style="font-size:1rem;">{% if total_minutos_semana >= 60 %}min{% else %}min{% endif %}</small>
+      </div>
+      <div class="text-muted"><i class="bi bi-hourglass-split"></i> Estudados esta semana</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-7">
+    <div class="card p-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-calendar-event"></i> Próximas Atividades</h6>
+        <a href="{% url 'atividade_criar' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Nova</a>
+      </div>
+      {% if atividades_pendentes %}
+      <ul class="list-group list-group-flush">
+        {% for a in atividades_pendentes %}
+        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+          <div>
+            <span class="fw-semibold">{{ a.titulo }}</span><br>
+            <small class="text-muted">{{ a.disciplina.nome }} · {{ a.data|date:"d/m/Y" }}</small>
+          </div>
+          <div class="d-flex gap-2">
+            <span class="badge badge-prioridade-{{ a.prioridade }}">{{ a.get_prioridade_display }}</span>
+            <span class="badge bg-secondary">{{ a.get_tipo_display }}</span>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="text-end mt-2">
+        <a href="{% url 'atividade_lista' %}" class="btn btn-sm btn-outline-secondary">Ver todas</a>
+      </div>
+      {% else %}
+      <p class="text-muted text-center py-3">Nenhuma atividade pendente. 🎉</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-lightning"></i> Ações Rápidas</h6>
+      <div class="d-grid gap-2">
+        <a href="{% url 'atividade_criar' %}" class="btn btn-outline-primary"><i class="bi bi-plus-circle"></i> Cadastrar Atividade/Prova</a>
+        <a href="{% url 'cronograma_criar' %}" class="btn btn-outline-secondary"><i class="bi bi-clock-history"></i> Planejar Sessão de Estudo</a>
+        <a href="{% url 'registro_criar' %}" class="btn btn-outline-success"><i class="bi bi-hourglass-split"></i> Registrar Horas Estudadas</a>
+        <a href="{% url 'calendario_mensal' %}" class="btn btn-outline-info"><i class="bi bi-calendar3"></i> Ver Calendário</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
