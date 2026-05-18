@@ -35,4 +35,7 @@ urlpatterns = [
     path('horas/novo/', views.registro_criar, name='registro_criar'),
     path('horas/<int:pk>/editar/', views.registro_editar, name='registro_editar'),
     path('horas/<int:pk>/excluir/', views.registro_excluir, name='registro_excluir'),
+
+    # Relatórios RF09
+    path('relatorios/', views.relatorios, name='relatorios'),
 ]

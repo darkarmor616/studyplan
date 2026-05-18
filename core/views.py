@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.contrib import messages
+from django.db.models import Sum, Count, Q
 from datetime import date, timedelta
 import calendar
 
@@ -357,3 +358,106 @@ def registro_excluir(request, pk):
         messages.success(request, 'Registro excluído.')
         return redirect('registro_lista')
     return render(request, 'core/confirmar_exclusao.html', {'objeto': registro, 'tipo': 'registro de horas'})
+
+
+# ─── Relatórios (RF09) ────────────────────────────────────────────────────────
+
+@login_required
+def relatorios(request):
+    usuario = request.user
+    hoje = date.today()
+
+    disciplinas = list(Disciplina.objects.filter(usuario=usuario).order_by('nome'))
+    nomes_disciplinas = [d.nome for d in disciplinas]
+
+    # Horas estudadas por disciplina (minutos → horas)
+    horas_por_disc = {d.id: 0 for d in disciplinas}
+    for r in RegistroHoras.objects.filter(usuario=usuario).values('disciplina_id').annotate(total=Sum('tempo_estudado')):
+        if r['disciplina_id'] in horas_por_disc:
+            horas_por_disc[r['disciplina_id']] = r['total'] or 0
+    horas_disciplina_valores = [round(horas_por_disc[d.id] / 60, 2) for d in disciplinas]
+
+    # Evolução de horas estudadas — últimas 8 semanas (segunda a domingo)
+    inicio_semana_atual = hoje - timedelta(days=hoje.weekday())
+    semanas = []
+    for i in range(7, -1, -1):
+        inicio = inicio_semana_atual - timedelta(weeks=i)
+        fim = inicio + timedelta(days=6)
+        semanas.append({'inicio': inicio, 'fim': fim})
+
+    labels_semanas = [f"{s['inicio'].strftime('%d/%m')}" for s in semanas]
+    evolucao_valores = []
+    for s in semanas:
+        total = RegistroHoras.objects.filter(
+            usuario=usuario, data__gte=s['inicio'], data__lte=s['fim']
+        ).aggregate(t=Sum('tempo_estudado'))['t'] or 0
+        evolucao_valores.append(round(total / 60, 2))
+
+    # Taxa de conclusão de atividades por disciplina
+    taxa_atividades = []
+    for d in disciplinas:
+        agg = Atividade.objects.filter(usuario=usuario, disciplina=d).aggregate(
+            total=Count('id'),
+            concluidas=Count('id', filter=Q(concluida=True)),
+        )
+        total = agg['total'] or 0
+        concluidas = agg['concluidas'] or 0
+        taxa = round((concluidas / total) * 100, 1) if total else 0
+        taxa_atividades.append({'disciplina': d.nome, 'total': total, 'concluidas': concluidas, 'taxa': taxa})
+
+    # Taxa de conclusão do cronograma por disciplina
+    taxa_cronograma = []
+    for d in disciplinas:
+        agg = CronogramaEstudo.objects.filter(usuario=usuario, disciplina=d).aggregate(
+            total=Count('id'),
+            concluidos=Count('id', filter=Q(concluido=True)),
+        )
+        total = agg['total'] or 0
+        concluidos = agg['concluidos'] or 0
+        taxa = round((concluidos / total) * 100, 1) if total else 0
+        taxa_cronograma.append({'disciplina': d.nome, 'total': total, 'concluidos': concluidos, 'taxa': taxa})
+
+    # Planejado x Realizado por disciplina (em horas)
+    planejado_valores = []
+    realizado_valores = []
+    for d in disciplinas:
+        planejado = CronogramaEstudo.objects.filter(usuario=usuario, disciplina=d).aggregate(
+            t=Sum('tempo_planejado'))['t'] or 0
+        realizado = RegistroHoras.objects.filter(usuario=usuario, disciplina=d).aggregate(
+            t=Sum('tempo_estudado'))['t'] or 0
+        planejado_valores.append(round(planejado / 60, 2))
+        realizado_valores.append(round(realizado / 60, 2))
+
+    # Métricas resumidas
+    total_minutos = RegistroHoras.objects.filter(usuario=usuario).aggregate(
+        t=Sum('tempo_estudado'))['t'] or 0
+    total_horas = round(total_minutos / 60, 1)
+
+    mais_estudada = None
+    if disciplinas and any(horas_disciplina_valores):
+        idx = horas_disciplina_valores.index(max(horas_disciplina_valores))
+        if horas_disciplina_valores[idx] > 0:
+            mais_estudada = {'nome': disciplinas[idx].nome, 'horas': horas_disciplina_valores[idx]}
+
+    total_atividades = Atividade.objects.filter(usuario=usuario).count()
+    atividades_concluidas = Atividade.objects.filter(usuario=usuario, concluida=True).count()
+    taxa_conclusao_geral = round((atividades_concluidas / total_atividades) * 100, 1) if total_atividades else 0
+
+    contexto = {
+        'tem_dados': bool(disciplinas),
+        'total_horas': total_horas,
+        'mais_estudada': mais_estudada,
+        'total_atividades': total_atividades,
+        'atividades_concluidas': atividades_concluidas,
+        'taxa_conclusao_geral': taxa_conclusao_geral,
+        'taxa_atividades': taxa_atividades,
+        'taxa_cronograma': taxa_cronograma,
+        # Dados para Chart.js (serializados via json_script no template)
+        'labels_disciplinas': nomes_disciplinas,
+        'horas_disciplina': horas_disciplina_valores,
+        'labels_semanas': labels_semanas,
+        'evolucao': evolucao_valores,
+        'planejado': planejado_valores,
+        'realizado': realizado_valores,
+    }
+    return render(request, 'core/relatorios.html', contexto)

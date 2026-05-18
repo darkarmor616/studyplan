@@ -1,0 +1,222 @@
+{% extends 'core/base.html' %}
+{% block title %}Relatórios - StudyPlan{% endblock %}
+{% block page_title %}Relatórios e Progresso{% endblock %}
+
+{% block content %}
+{% if not tem_dados %}
+<div class="card p-5 text-center">
+  <i class="bi bi-graph-up display-1 text-muted mb-3"></i>
+  <h5 class="text-muted">Sem dados para exibir</h5>
+  <p class="text-muted mb-3">Cadastre disciplinas, registre horas estudadas e crie cronogramas para visualizar seus relatórios.</p>
+  <div>
+    <a href="{% url 'disciplina_criar' %}" class="btn btn-primary"><i class="bi bi-plus"></i> Nova Disciplina</a>
+  </div>
+</div>
+{% else %}
+
+<!-- Cards de métricas resumidas -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card text-center p-3">
+      <div class="display-6 text-info fw-bold">{{ total_horas }}<small style="font-size:1rem;">h</small></div>
+      <div class="text-muted"><i class="bi bi-hourglass-split"></i> Total de horas estudadas</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3">
+      {% if mais_estudada %}
+        <div class="h4 text-primary fw-bold mb-1 text-truncate" title="{{ mais_estudada.nome }}">{{ mais_estudada.nome }}</div>
+        <div class="text-muted small">{{ mais_estudada.horas }}h estudadas</div>
+      {% else %}
+        <div class="h4 text-muted fw-bold mb-1">—</div>
+        <div class="text-muted small">Sem registros ainda</div>
+      {% endif %}
+      <div class="text-muted mt-1"><i class="bi bi-trophy"></i> Disciplina mais estudada</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3">
+      <div class="display-6 text-success fw-bold">{{ taxa_conclusao_geral }}<small style="font-size:1rem;">%</small></div>
+      <div class="text-muted"><i class="bi bi-check2-circle"></i> Conclusão geral de atividades</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3">
+      <div class="display-6 text-warning fw-bold">{{ atividades_concluidas }}<small class="text-muted" style="font-size:1rem;">/{{ total_atividades }}</small></div>
+      <div class="text-muted"><i class="bi bi-check2-square"></i> Atividades concluídas</div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart"></i> Horas estudadas por disciplina</h6>
+      <canvas id="graficoHorasDisciplina" height="220"></canvas>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow"></i> Evolução semanal (últimas 8 semanas)</h6>
+      <canvas id="graficoEvolucao" height="220"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart-steps"></i> Planejado x Realizado por disciplina (horas)</h6>
+      <canvas id="graficoPlanejadoRealizado" height="100"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Taxas de conclusão -->
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-check2-square"></i> Conclusão de atividades por disciplina</h6>
+      {% if taxa_atividades %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr class="text-muted small">
+              <th>Disciplina</th>
+              <th class="text-center">Concluídas</th>
+              <th style="width:40%">Taxa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in taxa_atividades %}
+            <tr>
+              <td class="fw-semibold">{{ item.disciplina }}</td>
+              <td class="text-center">{{ item.concluidas }}/{{ item.total }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height:8px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ item.taxa }}%"></div>
+                  </div>
+                  <small class="text-muted" style="min-width:42px;">{{ item.taxa }}%</small>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted text-center py-3 mb-0">Sem disciplinas cadastradas.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-clock-history"></i> Conclusão de cronograma por disciplina</h6>
+      {% if taxa_cronograma %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr class="text-muted small">
+              <th>Disciplina</th>
+              <th class="text-center">Concluídos</th>
+              <th style="width:40%">Taxa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in taxa_cronograma %}
+            <tr>
+              <td class="fw-semibold">{{ item.disciplina }}</td>
+              <td class="text-center">{{ item.concluidos }}/{{ item.total }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height:8px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ item.taxa }}%"></div>
+                  </div>
+                  <small class="text-muted" style="min-width:42px;">{{ item.taxa }}%</small>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted text-center py-3 mb-0">Sem disciplinas cadastradas.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{{ labels_disciplinas|json_script:"labels-disciplinas" }}
+{{ horas_disciplina|json_script:"horas-disciplina" }}
+{{ labels_semanas|json_script:"labels-semanas" }}
+{{ evolucao|json_script:"evolucao-semanal" }}
+{{ planejado|json_script:"planejado" }}
+{{ realizado|json_script:"realizado" }}
+<script>
+  const getJSON = (id) => JSON.parse(document.getElementById(id).textContent);
+
+  const labelsDisciplinas = getJSON('labels-disciplinas');
+  const horasDisciplina = getJSON('horas-disciplina');
+  const labelsSemanas = getJSON('labels-semanas');
+  const evolucao = getJSON('evolucao-semanal');
+  const planejado = getJSON('planejado');
+  const realizado = getJSON('realizado');
+
+  const baseOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+  };
+
+  new Chart(document.getElementById('graficoHorasDisciplina'), {
+    type: 'bar',
+    data: {
+      labels: labelsDisciplinas,
+      datasets: [{
+        label: 'Horas estudadas',
+        data: horasDisciplina,
+        backgroundColor: '#0d6efd',
+        borderRadius: 6,
+      }]
+    },
+    options: { ...baseOptions, plugins: { legend: { display: false } } }
+  });
+
+  new Chart(document.getElementById('graficoEvolucao'), {
+    type: 'line',
+    data: {
+      labels: labelsSemanas,
+      datasets: [{
+        label: 'Horas estudadas',
+        data: evolucao,
+        borderColor: '#198754',
+        backgroundColor: 'rgba(25, 135, 84, .15)',
+        fill: true,
+        tension: .3,
+        pointRadius: 4,
+      }]
+    },
+    options: baseOptions
+  });
+
+  new Chart(document.getElementById('graficoPlanejadoRealizado'), {
+    type: 'bar',
+    data: {
+      labels: labelsDisciplinas,
+      datasets: [
+        { label: 'Planejado', data: planejado, backgroundColor: '#6c757d', borderRadius: 6 },
+        { label: 'Realizado', data: realizado, backgroundColor: '#0dcaf0', borderRadius: 6 },
+      ]
+    },
+    options: baseOptions
+  });
+</script>
+
+{% endif %}
+{% endblock %}

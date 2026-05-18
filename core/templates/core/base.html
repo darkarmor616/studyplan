@@ -59,6 +59,10 @@
            href="{% url 'registro_lista' %}">
           <i class="bi bi-hourglass-split"></i> Horas Estudadas
         </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'relatorios' %}active{% endif %}"
+           href="{% url 'relatorios' %}">
+          <i class="bi bi-graph-up"></i> Relatórios
+        </a>
       </nav>
       <div class="mt-4">
         <a class="nav-link text-danger" href="{% url 'logout' %}">
