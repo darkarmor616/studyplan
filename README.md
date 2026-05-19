@@ -13,7 +13,7 @@ Desenvolvido como projeto da disciplina de **Engenharia de Software II** — IFS
 | v1.0   | RF01, RF02, RF03, RF04, RF10, RF11, RF12 | ✅ Completo |
 | v2.0   | RF05, RF06 (Lembretes + Calendário) | ✅ Completo |
 | v3.0   | RF07, RF08 (Cronograma + Registro de Horas) | ✅ Completo |
-| v4.0   | RF09 (Relatórios e Gráficos) | 🔜 Planejado |
+| v4.0   | RF09 (Relatórios e Gráficos) | ✅ Planejado |
 
 ---
 
