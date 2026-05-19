@@ -3,7 +3,7 @@
     "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput"
   },
   "deploy": {
-    "preDeployCommand": "python manage.py migrate",
+    "preDeployCommand": "python manage.py migrate && python manage.py createsuperuser --noinput || true",
     "startCommand": "gunicorn studyplan.wsgi --log-file -"
   }
 }
